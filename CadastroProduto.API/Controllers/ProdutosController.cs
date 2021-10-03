@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CadastroProduto.API;
 using CadastroProduto.API.Models;
+using System.Text;
+using System.Net.Http;
 
 namespace CadastroProduto.API.Controllers
 {
@@ -51,6 +53,10 @@ namespace CadastroProduto.API.Controllers
             {
                 return BadRequest();
             }
+            else if (!todosParametrosForamEnviados(produto, out string msg))
+            {
+                return BadRequest(msg);
+            }
 
             _context.Entry(produto).State = EntityState.Modified;
 
@@ -60,7 +66,7 @@ namespace CadastroProduto.API.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ProdutoExists(id))
+                if (!CodigoProdutoExiste(id))
                 {
                     return NotFound();
                 }
@@ -78,6 +84,30 @@ namespace CadastroProduto.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Produto>> PostProduto(Produto produto)
         {
+            if (!todosParametrosForamEnviados(produto, out string msg))
+            {
+                return BadRequest(msg);
+            }
+
+            var uuid = Guid.NewGuid().ToString();
+            var uuidEhRepetido = (await _context.Produtos.FindAsync(uuid)) != null;
+
+            while (uuidEhRepetido)
+            {
+                uuid = Guid.NewGuid().ToString();
+                uuidEhRepetido = (await _context.Produtos.FindAsync(uuid)) != null;
+            }
+
+            var ultimoCodigoProduto = 0;
+
+            if (_context.Produtos.Any())
+            {
+                ultimoCodigoProduto = int.Parse(_context.Produtos.OrderBy(p => p.Codigo).Last().Codigo);
+            }
+
+            produto.Id = uuid;
+            produto.Codigo = (ultimoCodigoProduto + 1).ToString();
+
             _context.Produtos.Add(produto);
             try
             {
@@ -85,9 +115,9 @@ namespace CadastroProduto.API.Controllers
             }
             catch (DbUpdateException)
             {
-                if (ProdutoExists(produto.Id))
+                if (IdProdutoExiste(produto.Id))
                 {
-                    return Conflict();
+                    return Conflict("Produto com id especificado já existe.");
                 }
                 else
                 {
@@ -114,9 +144,48 @@ namespace CadastroProduto.API.Controllers
             return NoContent();
         }
 
-        private bool ProdutoExists(string id)
+        private bool IdProdutoExiste(string id)
         {
             return _context.Produtos.Any(e => e.Id == id);
+        }
+
+        private bool CodigoProdutoExiste(string codigo)
+        {
+            return _context.Produtos.Any(e => e.Codigo == codigo);
+        }
+
+        private bool todosParametrosForamEnviados(Produto produto, out string msg)
+        {
+            if (produto.Codigo is null || produto.CodigoDepartamento is null || produto.Descricao is null || produto.Status is null)
+            {
+                var sb = new StringBuilder();
+                if (produto.Codigo is null)
+                {
+                    sb.Append("Codigo, ");
+                }
+
+                if (produto.CodigoDepartamento is null)
+                {
+                    sb.Append("CodigoDepartamento, ");
+                }
+
+                if (produto.Descricao is null)
+                {
+                    sb.Append("Descricao, ");
+                }
+
+                if (produto.Status is null)
+                {
+                    sb.Append("Status, ");
+                }
+
+                msg = $"Os seguintes parâmetros estão faltando: {sb.ToString().Remove(sb.ToString().Length - 2)}.";
+
+                return false;
+            }
+
+            msg = null;
+            return true;
         }
     }
 }
