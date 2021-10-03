@@ -19,7 +19,8 @@ namespace CadastroProduto.API.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Descricao = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CodigoDepartamento = table.Column<int>(type: "int", precision: 10, scale: 2, nullable: false),
+                    CodigoDepartamento = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Preco = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     Status = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
