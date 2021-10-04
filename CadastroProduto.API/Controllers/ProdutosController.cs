@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CadastroProduto.API;
 using CadastroProduto.API.Models;
 using System.Text;
-using System.Net.Http;
 
 namespace CadastroProduto.API.Controllers
 {
@@ -30,7 +27,7 @@ namespace CadastroProduto.API.Controllers
             return await _context.Produtos.ToListAsync();
         }
 
-        // GET: api/Produtos/5
+        // GET: api/Produtos/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Produto>> GetProduto(string id)
         {
@@ -38,24 +35,31 @@ namespace CadastroProduto.API.Controllers
 
             if (produto == null)
             {
-                return NotFound();
+                return NotFound("Produto não encontrado.");
             }
 
             return produto;
         }
 
-        // PUT: api/Produtos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/Produtos/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduto(string id, Produto produto)
         {
-            if (id != produto.Id)
-            {
-                return BadRequest();
-            }
-            else if (!todosParametrosForamEnviados(produto, out string msg))
+            if (!todosParametrosForamEnviados(produto, out string msg))
             {
                 return BadRequest(msg);
+            }
+
+            if (!IdProdutoExiste(id))
+            {
+                return NotFound("Produto não encontrado.");
+            }
+
+            var produtoAntigo = _context.Produtos.AsNoTracking().First(prdt => prdt.Id == id);
+
+            if (id != produtoAntigo.Id || produto.Id != produtoAntigo.Id || produto.Codigo != produtoAntigo.Codigo)
+            {
+                return BadRequest("Não é permitido alterar ID ou código do produto.");
             }
 
             _context.Entry(produto).State = EntityState.Modified;
@@ -66,21 +70,13 @@ namespace CadastroProduto.API.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CodigoProdutoExiste(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
 
             return NoContent();
         }
 
         // POST: api/Produtos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Produto>> PostProduto(Produto produto)
         {
@@ -115,20 +111,14 @@ namespace CadastroProduto.API.Controllers
             }
             catch (DbUpdateException)
             {
-                if (IdProdutoExiste(produto.Id))
-                {
-                    return Conflict("Produto com id especificado já existe.");
-                }
-                else
-                {
-                    throw;
-                }
+
+                throw;
             }
 
             return CreatedAtAction("GetProduto", new { id = produto.Id }, produto);
         }
 
-        // DELETE: api/Produtos/5
+        // DELETE: api/Produtos/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduto(string id)
         {
@@ -156,13 +146,9 @@ namespace CadastroProduto.API.Controllers
 
         private bool todosParametrosForamEnviados(Produto produto, out string msg)
         {
-            if (produto.Codigo is null || produto.CodigoDepartamento is null || produto.Descricao is null || produto.Status is null)
+            if (produto.CodigoDepartamento is null || produto.Descricao is null || produto.Status is null)
             {
                 var sb = new StringBuilder();
-                if (produto.Codigo is null)
-                {
-                    sb.Append("Codigo, ");
-                }
 
                 if (produto.CodigoDepartamento is null)
                 {
