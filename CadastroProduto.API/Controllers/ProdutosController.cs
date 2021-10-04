@@ -139,11 +139,6 @@ namespace CadastroProduto.API.Controllers
             return _context.Produtos.Any(e => e.Id == id);
         }
 
-        private bool CodigoProdutoExiste(string codigo)
-        {
-            return _context.Produtos.Any(e => e.Codigo == codigo);
-        }
-
         private bool todosParametrosForamEnviados(Produto produto, out string msg)
         {
             if (produto.CodigoDepartamento is null || produto.Descricao is null || produto.Status is null)
