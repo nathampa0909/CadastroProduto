@@ -18,7 +18,7 @@
       }
     },
     "CadastroProduto.API": {
-      "commandName": "Project",
+      "commandName": "CadastroProduto.API",
       "dotnetRunMessages": "true",
       "launchBrowser": true,
       "launchUrl": "swagger",
