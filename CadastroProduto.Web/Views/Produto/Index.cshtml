@@ -1,0 +1,60 @@
+﻿@model IEnumerable<CadastroProduto.Web.Models.ProdutoModel>
+
+@{
+    ViewData["Title"] = "Produtos";
+    var departamentos = (List<DepartamentoModel>)ViewBag.ListaDepartamentos;
+}
+
+<h1>Produtos</h1>
+
+<p>
+    <a asp-action="Criar">Criar novo produto</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Codigo)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Descricao)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CodigoDepartamento)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Preco)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Status)
+            </th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Codigo)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Descricao)
+                </td>
+                <td>
+                    @departamentos.First(depto => depto.Codigo == item.CodigoDepartamento).Nome
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Preco)
+                </td>
+                <td>
+                    @(Html.DisplayTextFor(modelItem => item.Status).Equals("True") ? "Ativo" : "Inativo")
+                </td>
+                <td>
+                    @Html.ActionLink("Atualizar", "Editar", new { id = item.Id }) |
+                    @Html.ActionLink("Deletar", "Deletar", new { id = item.Id })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
